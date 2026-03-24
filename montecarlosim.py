@@ -67,29 +67,29 @@ call_price_mc, std_error_mc = monte_carlo_call_price(
 print("\n" + "-"*50)
 print("Black-Scholes Call Option Pricing")
 print("-"*50)
-print(f"Initial Stock Price (S): ${S_0:.2f}")
-print(f"Strike Price (K): ${K:.2f}")
+print(f"Initial Stock Price (S): INR {S_0:.2f}")
+print(f"Strike Price (K): INR {K:.2f}")
 print(f"Time to Expiration (T): {T} year(s)")
 print(f"Risk-free Rate (r): {r*100:.1f}%")
 print(f"Volatility (sigma): {sigma*100:.2f}%")
 print("-"*50)
-print(f"Call Option Price (BS): ${call_price_bs:.4f}")
+print(f"Call Option Price (BS): INR {call_price_bs:.4f}")
 print("-"*50)
 
 # Monte Carlo results
 print("\n" + "-"*50)
 print("Monte Carlo Call Option Pricing (10,000 simulations)")
 print("-"*50)
-print(f"Call Option Price (MC): ${call_price_mc:.4f}")
+print(f"Call Option Price (MC): INR {call_price_mc:.4f}")
 print("-"*50)
 
 
 print("\n" + "-"*50)
 print("Comparison")
 print("-"*50)
-print(f"Black-Scholes Price: ${call_price_bs:.4f}")
-print(f"Monte Carlo Price:   ${call_price_mc:.4f}")
-print(f"Difference:          ${abs(call_price_bs - call_price_mc):.4f}")
+print(f"Black-Scholes Price: INR {call_price_bs:.4f}")
+print(f"Monte Carlo Price:   INR {call_price_mc:.4f}")
+print(f"Difference:          INR {abs(call_price_bs - call_price_mc):.4f}")
 print(f"Difference (%):      {abs(call_price_bs - call_price_mc) / call_price_bs * 100:.2f}%")
 print("-"*50)
 
@@ -157,8 +157,8 @@ print("SUMMARY TABLE: European Call Option Pricing Analysis")
 print("="*70)
 
 summary_data = [
-    ("Black-Scholes Price", f"${call_price_bs:.4f}"),
-    ("Monte Carlo Price (10,000 paths)", f"${call_price_mc:.4f}"),
+    ("Black-Scholes Price", f"₹{call_price_bs:.4f}"),
+    ("Monte Carlo Price (10,000 paths)", f"₹{call_price_mc:.4f}"),
     ("Absolute Percentage Error", f"{abs_pct_error:.4f}%"),
 ]
 
