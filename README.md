@@ -4,10 +4,13 @@ This repository contains a Python script (`montecarlosim.py`) that:
 
 - Downloads 5 years of daily Nifty 50 (^NSEI) closing prices using `yfinance`
 - Computes daily log returns and annualized volatility
-- Implements European call option pricing with Black-Scholes
-- Implements Monte Carlo pricing for a European call using GBM
-- Visualizes GBM sample paths and Monte Carlo convergence
-- Prints a formatted summary table of results
+- Implements European call option pricing with Black-Scholes via `black_scholes_call(S, K, T, r, sigma)`
+- Implements Monte Carlo pricing for a European call via `monte_carlo_call_price(S0, K, T, r, sigma, iterations=10000)`
+- Visualizes:
+  - first 10 simulated GBM paths (1-year horizon)
+  - Monte Carlo convergence vs Black-Scholes (log-iteration scale)
+- Saves plot as `nifty_horizontal.png`
+- Prints a formatted summary table of results (INR labels) with percentage error and confidence interval
 
 ## Files
 
