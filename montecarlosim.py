@@ -19,49 +19,101 @@ print(f"Annualized Volatility of Nifty 50 calculated through historical data (%)
 print("-"*50)
 
 
-# =====================================================
+
 # Black-Scholes Call Option Pricing Function
-# =====================================================
+
 
 def black_scholes_call(S, K, T, r, sigma):
-   
-    
+
     d1 = (np.log(S / K) + (r + 0.5 * sigma**2) * T) / (sigma * np.sqrt(T))
     d2 = d1 - sigma * np.sqrt(T)
-    
 
     call_price = S * norm.cdf(d1) - K * np.exp(-r * T) * norm.cdf(d2)
-    
+
     return call_price
 
 
-# =====================================================
+
+# Black-Scholes Delta Function
+
+def black_scholes_delta(S, K, T, r, sigma):
+    d1 = (np.log(S / K) + (r + 0.5 * sigma**2) * T) / (sigma * np.sqrt(T))
+    delta = norm.cdf(d1)
+    return delta
+
+
+
 # Monte Carlo Call Option Pricing Function
-# =====================================================
+
 
 def monte_carlo_call_price(S0, K, T, r, sigma, iterations=10000):
-   
+
     z = np.random.standard_normal(iterations)
     S_final = S0 * np.exp((r - 0.5 * sigma**2) * T + sigma * np.sqrt(T) * z)
     payoffs = np.maximum(S_final - K, 0)
     call_price = np.exp(-r * T) * np.mean(payoffs)
     std_error = np.std(payoffs, ddof=1) / np.sqrt(iterations)
-    
+
     return call_price, std_error
 
 
 
-S_0 = closing_prices.values[0].item() 
-K = S_0    
-T = 1      
-r = 0.07   
-sigma = annualized_volatility.item() 
+# Monte Carlo Delta Hedging Simulation
+
+def simulate_delta_hedging(S0, K, T, r, sigma, num_simulations=1000, num_steps=252):
+    dt = T / num_steps
+
+
+    stock_prices = np.zeros((num_simulations, num_steps + 1))
+    stock_prices[:, 0] = S0
+
+    cash_account = np.zeros(num_simulations)
+    shares_held = np.zeros(num_simulations)
+    initial_delta = black_scholes_delta(S0, K, T, r, sigma)
+    shares_held[:] = initial_delta
+    cash_account -= shares_held * S0
+    z = np.random.standard_normal((num_simulations, num_steps))
+
+    for j in range(num_steps):
+        time_remaining = T - (j + 1) * dt
+        drift = (r - 0.5 * sigma**2) * dt
+        volatility_term = sigma * np.sqrt(dt) * z[:, j]
+        stock_prices[:, j+1] = stock_prices[:, j] * np.exp(drift + volatility_term)
+        if time_remaining > 0:
+
+            new_delta = black_scholes_delta(stock_prices[:, j+1], K, time_remaining, r, sigma)
+        else:
+            new_delta = np.zeros(num_simulations)
+
+        delta_change = new_delta - shares_held
+        cash_account -= delta_change * stock_prices[:, j+1]
+        shares_held = new_delta
+        cash_account *= np.exp(r * dt)
+    final_stock_prices = stock_prices[:, num_steps]
+    option_payoff = np.maximum(final_stock_prices - K, 0)
+    final_portfolio_value = cash_account + shares_held * final_stock_prices - option_payoff
+
+    mean_hedging_pnl = np.mean(final_portfolio_value)
+    std_hedging_pnl = np.std(final_portfolio_value)
+
+    return mean_hedging_pnl, std_hedging_pnl, final_portfolio_value
+
+
+
+S_0 = closing_prices.values[0].item()
+K = S_0
+T = 1
+r = 0.07
+sigma = annualized_volatility.item()
 
 call_price_bs = black_scholes_call(S_0, K, T, r, sigma)
 np.random.seed(42)
 call_price_mc, std_error_mc = monte_carlo_call_price(
     S_0, K, T, r, sigma, iterations=10000
 )
+
+np.random.seed(42)
+mean_hedging_pnl, std_hedging_pnl, final_pnl_values = simulate_delta_hedging(S_0, K, T, r, sigma, num_simulations=10000, num_steps=252 * 10) # Changed num_steps here
 
 # Black-Scholes results
 print("\n" + "-"*50)
@@ -93,9 +145,9 @@ print(f"Difference:          INR {abs(call_price_bs - call_price_mc):.4f}")
 print(f"Difference (%):      {abs(call_price_bs - call_price_mc) / call_price_bs * 100:.2f}%")
 print("-"*50)
 
-# =====================================================
+
 # Plotting Section
-# =====================================================
+
 
 iteration_counts = np.array([100, 500, 1000, 2500, 5000, 10000, 25000])
 mc_prices_line = []
@@ -111,12 +163,12 @@ dt = 1 / 252
 steps = int(T * 252)
 paths = np.zeros((10, steps + 1))
 paths[:, 0] = S_0
-for i in range(steps):
-    paths[:, i+1] = paths[:, i] * np.exp((r - 0.5 * sigma**2) * dt + sigma * np.sqrt(dt) * np.random.standard_normal(10))
+for i in range(10):
+    paths[i, 1:] = paths[i, 0] * np.exp(np.cumsum((r - 0.5 * sigma**2) * dt + sigma * np.sqrt(dt) * np.random.standard_normal(steps)))
 
 time_axis = np.linspace(0, T, steps + 1)
 for i in range(10):
-    ax1.plot(time_axis, paths[i, :], alpha=0.7, linewidth=1) 
+    ax1.plot(time_axis, paths[i, :], alpha=0.7, linewidth=1)
 
 ax1.axhline(y=K, color='r', linestyle='--', label='Strike')
 ax1.set_title('10 Simulated GBM Paths', fontsize=10, fontweight='bold')
@@ -125,10 +177,10 @@ ax1.set_ylabel('Price', fontsize=9)
 ax1.tick_params(labelsize=8)
 ax1.grid(True, alpha=0.2)
 
-#  Convergence 
+#  Convergence
 ax2.plot(iteration_counts, mc_prices_line, marker='o', markersize=3, color='blue', label='MC')
 ax2.axhline(y=call_price_bs, color='red', linestyle='-', label='BSM')
-ax2.set_xscale('log') 
+ax2.set_xscale('log')
 ax2.set_title('MC Convergence to BSM', fontsize=10, fontweight='bold')
 ax2.set_xlabel('Iterations (Log)', fontsize=9)
 ax2.set_ylabel('Option Price', fontsize=9)
@@ -145,9 +197,9 @@ ax2.set_ylim(y_min, y_max)
 plt.tight_layout()
 plt.savefig('nifty_horizontal.png', dpi=150)
 plt.show()
-# =====================================================
+
 # Summary Table
-# =====================================================
+
 
 abs_pct_error = abs(call_price_bs - call_price_mc) / call_price_bs * 100
 
@@ -156,10 +208,12 @@ print("\n" + "="*70)
 print("SUMMARY TABLE: European Call Option Pricing Analysis")
 print("="*70)
 
-summary_data = [
-    ("Black-Scholes Price", f"₹{call_price_bs:.4f}"),
-    ("Monte Carlo Price (10,000 paths)", f"₹{call_price_mc:.4f}"),
+summary_data = [("Calculated Volatility (%)",f"{sigma*100:.2f}%"),
+    ("Black-Scholes Price", f"INR {call_price_bs:.4f}"),
+    ("Monte Carlo Price (10,000 paths)", f"INR {call_price_mc:.4f}"),
     ("Absolute Percentage Error", f"{abs_pct_error:.4f}%"),
+    ("Delta P&L (Mean)", f"INR {mean_hedging_pnl:.4f}"),
+    ("Delta P&L (Std Dev)", f"INR {std_hedging_pnl:.4f}")
 ]
 
 
@@ -170,6 +224,3 @@ for metric, value in summary_data:
     print(f"{metric:<35} {value:>30}")
 
 print("="*70)
-    
-   
-
