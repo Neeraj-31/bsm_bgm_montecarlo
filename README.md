@@ -11,6 +11,7 @@ This repository contains a Python script (`montecarlosim.py`) that:
   - Monte Carlo convergence vs Black-Scholes (log-iteration scale)
 - Saves plot as `nifty_horizontal.png`
 - Prints a formatted summary table of results (INR labels) with percentage error and confidence interval
+
 -has a continuous delta hedging function that calculates hedging performance
 
 ## Files
