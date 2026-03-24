@@ -57,13 +57,10 @@ where `N` is the standard normal cumulative distribution function.
 The Monte Carlo method simulates asset returns under Geometric Brownian Motion (GBM):
 
 - $dS_t = r S_t dt + \sigma S_t dW_t$
-- Discretized increment: $S_{t+\Delta t} = S_t \exp\left((r - 0.5\sigma^2)\Delta t + \sigma \sqrt{\Delta t} Z\right)$
-
-The script supports two methods:
-- `exact`: direct sample of terminal price $S_T$ via $\ln S_T \sim N(\ln S_0 + (r - 0.5\sigma^2)T,\, \sigma^2 T)$
-- `vectorized`: simulate daily path in full using numpy vectorization
-
-Payoff at maturity: $\max(S_T - K, 0)$, then discount with $e^{-rT}$.
+- Terminal price: $S_T = S_0 \exp\left((r - 0.5\sigma^2)T + \sigma\sqrt{T}Z\right)$ where $Z \sim N(0,1)$
+- Payoff: $\max(S_T - K, 0)$
+- Price: $e^{-rT} \times \mathbb{E}[\text{payoff}]$
+- Standard error: $\frac{\sigma_{\text{payoffs}}}{\sqrt{n}}$
 
 ## Convergence Behavior
 
@@ -71,5 +68,5 @@ Monte Carlo prices are noisy for low path counts. In tests, the average Monte Ca
 
 ## Notes
 
-- If you test the vectorized `monte_carlo_call_price(..., method='vectorized')` and `method='loop'`, they should produce similar results for high iterations.
-- `method='exact'` gives the most accurate match to analytic Black-Scholes in expectation.
+- The script uses exact terminal distribution sampling for maximum accuracy
+- Monte Carlo estimates converge to Black-Scholes as the number of simulations increases
